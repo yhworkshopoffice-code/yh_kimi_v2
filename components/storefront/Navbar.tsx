@@ -1,8 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ShoppingCart } from 'lucide-react';
+import { Menu, X, ShoppingCart, User } from 'lucide-react';
+import Link from 'next/link';
 import { StorefrontView } from '@/lib/storefront/types';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { CartIcon } from '@/components/cart/CartIcon';
+import { CartDropdown } from '@/components/cart/CartDropdown';
 
 interface NavbarProps {
   onNavigate: (page: StorefrontView) => void;
@@ -15,6 +19,8 @@ export default function Navbar({ onNavigate, currentPage, onContactClick }: Navb
   const [scrolled, setScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,10 +85,35 @@ export default function Navbar({ onNavigate, currentPage, onContactClick }: Navb
             >
               <ShoppingCart size={18} /> 快速下單
             </button>
+            {/* Cart Icon */}
+            <div className="relative">
+              <CartIcon onClick={() => setIsCartOpen(!isCartOpen)} />
+              <CartDropdown isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+            </div>
+
+            {isAuthenticated ? (
+              <Link
+                href="/account"
+                className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                  <User size={18} className="text-cyan-400" />
+                </div>
+                <span className="font-medium text-sm hidden lg:inline">{user?.name || '帳號'}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="text-slate-300 hover:text-cyan-400 transition-colors font-medium text-sm hidden md:inline"
+              >
+                登入
+              </Link>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* Mobile Cart & Menu */}
+          <div className="md:hidden flex items-center gap-2">
+            <CartIcon onClick={() => setIsCartOpen(!isCartOpen)} />
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-slate-300 hover:text-white p-2"
@@ -112,6 +143,25 @@ export default function Navbar({ onNavigate, currentPage, onContactClick }: Navb
             >
               <ShoppingCart size={20} /> 進入商城
             </button>
+          </div>
+          <div className="pt-2">
+            {isAuthenticated ? (
+              <Link
+                href="/account"
+                onClick={() => setIsOpen(false)}
+                className="block w-full text-center bg-slate-800 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2"
+              >
+                <User size={20} /> 我的帳號
+              </Link>
+            ) : (
+              <Link
+                href="/auth/login"
+                onClick={() => setIsOpen(false)}
+                className="block w-full text-center bg-slate-800 text-white py-4 rounded-xl font-bold text-lg"
+              >
+                登入 / 註冊
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, ChevronRight, CheckCircle2, ShieldCheck, CreditCard, Landmark, Smartphone, MessageCircle, AlertCircle, Check } from 'lucide-react';
 import { Game, GamePackage, OrderFormData } from '@/lib/storefront/types';
 import { CONTACT_INFO } from '@/lib/storefront/constants';
+import { Step1OptionSelection } from './Step1OptionSelection';
 
 interface OrderWizardProps {
   game: Game | null;
@@ -122,33 +123,7 @@ ${isUidGame ? `UID：${formData.account}` : `登入方式：${formData.loginType
 
         {/* Steps Content */}
         <div className="flex-grow overflow-y-auto p-8">
-          {step === 1 && (
-            <div className="animate-in slide-in-from-right-10 duration-300">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <ChevronRight className="text-purple-500" /> 請選擇儲值面額
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {game.packages.map((pkg) => (
-                  <button
-                    key={pkg.id}
-                    onClick={() => { setSelectedPkg(pkg); handleNext(); }}
-                    className={`group p-6 rounded-3xl border-2 text-left transition-all relative overflow-hidden ${selectedPkg?.id === pkg.id ? 'border-purple-500 bg-purple-500/10' : 'border-slate-800 bg-slate-800/40 hover:border-slate-600'}`}
-                  >
-                    <div className="relative z-10">
-                      <div className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Select Package</div>
-                      <div className="text-lg font-black text-white mb-1 group-hover:text-purple-400 transition-colors">{pkg.name}</div>
-                      <div className="text-2xl font-black text-white">TWD {pkg.price}</div>
-                    </div>
-                    {selectedPkg?.id === pkg.id && (
-                      <div className="absolute top-4 right-4 text-purple-500">
-                        <CheckCircle2 size={24} />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {step === 1 && <Step1OptionSelection game={game} onNext={handleNext} />}
 
           {step === 2 && (
             <div className="animate-in slide-in-from-right-10 duration-300 space-y-8">
@@ -351,13 +326,9 @@ ${isUidGame ? `UID：${formData.account}` : `登入方式：${formData.loginType
             >
               下一步 <ChevronRight size={24} />
             </button>
-          ) : step === 1 && selectedPkg ? (
-             <button 
-              onClick={handleNext}
-              className="px-12 py-5 bg-purple-600 hover:bg-purple-500 text-white rounded-3xl font-black text-xl shadow-xl transition-all flex items-center gap-3"
-            >
-              下一步 <ChevronRight size={24} />
-            </button>
+          ) : step === 1 ? (
+            // Step 1 Next button is handled inside Step1OptionSelection component
+            null
           ) : null}
         </div>
       </div>

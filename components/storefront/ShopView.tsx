@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Flame, UserCircle2, CreditCard, Sparkles, ChevronRight, Search, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, Flame, UserCircle2, CreditCard, Sparkles, ChevronRight, Search, LayoutGrid, ShoppingCart, Zap } from 'lucide-react';
 import { GAMES } from '@/lib/storefront/constants';
-import { Game, GameCategory } from '@/lib/storefront/types';
+import { Game, GameCategory, GamePackage } from '@/lib/storefront/types';
+import { useCart } from '@/lib/cart';
 
 interface ShopViewProps {
   onBack: () => void;
@@ -15,6 +16,9 @@ export default function ShopView({ onBack, onOrder }: ShopViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [expandedGame, setExpandedGame] = useState<string | null>(null);
+  const [selectedPackages, setSelectedPackages] = useState<Record<string, string>>({});
+  const { addItem } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,6 +42,50 @@ export default function ShopView({ onBack, onOrder }: ShopViewProps) {
     (g.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
      g.englishName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const handleGameClick = (game: Game) => {
+    if (expandedGame === game.id) {
+      setExpandedGame(null);
+    } else {
+      setExpandedGame(game.id);
+      // Auto-select first package if none selected
+      if (!selectedPackages[game.id] && game.packages.length > 0) {
+        setSelectedPackages(prev => ({
+          ...prev,
+          [game.id]: game.packages[0].id
+        }));
+      }
+    }
+  };
+
+  const handlePackageSelect = (gameId: string, packageId: string) => {
+    setSelectedPackages(prev => ({
+      ...prev,
+      [gameId]: packageId
+    }));
+  };
+
+  const handleAddToCart = (game: Game) => {
+    const packageId = selectedPackages[game.id];
+    if (!packageId) return;
+    
+    const pkg = game.packages.find(p => p.id === packageId);
+    if (!pkg) return;
+
+    addItem(game, pkg);
+    setExpandedGame(null);
+  };
+
+  const handleBuyNow = (game: Game) => {
+    const packageId = selectedPackages[game.id];
+    if (!packageId) return;
+    
+    const pkg = game.packages.find(p => p.id === packageId);
+    if (!pkg) return;
+
+    addItem(game, pkg);
+    onOrder(game);
+  };
 
   const tabs = [
     { id: 'hot' as const, label: '近期熱門', icon: <Flame size={20} />, desc: '最受歡迎代儲項目' },
@@ -152,45 +200,118 @@ export default function ShopView({ onBack, onOrder }: ShopViewProps) {
 
           {/* Results Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            {filteredGames.map((game) => (
-              <div
-                key={game.id}
-                onClick={() => onOrder(game)}
-                className="group relative cursor-pointer bg-slate-900/80 border border-slate-800/50 rounded-[2.5rem] overflow-hidden hover:border-purple-500/50 transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_30px_60px_rgba(0,0,0,0.5),0_10px_30px_rgba(168,85,247,0.1)]"
-              >
-                <div className="aspect-[4/3] overflow-hidden relative">
-                  <img 
-                    src={game.image} 
-                    alt={game.name} 
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                  
-                  {/* Hover Overlay Icon */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-purple-600/10 backdrop-blur-[2px]">
-                    <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-500">
-                      <LayoutGrid size={28} />
+            {filteredGames.map((game) => {
+              const isExpanded = expandedGame === game.id;
+              const selectedPackageId = selectedPackages[game.id];
+              
+              return (
+                <div
+                  key={game.id}
+                  className={`group relative bg-slate-900/80 border border-slate-800/50 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-purple-500/50 hover:shadow-[0_30px_60px_rgba(0,0,0,0.5),0_10px_30px_rgba(168,85,247,0.1)] ${isExpanded ? 'ring-2 ring-purple-500/30' : ''}`}
+                >
+                  {/* Game Image */}
+                  <div 
+                    className="aspect-[4/3] overflow-hidden relative cursor-pointer"
+                    onClick={() => handleGameClick(game)}
+                  >
+                    <img 
+                      src={game.image} 
+                      alt={game.name} 
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                    
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-purple-600/10 backdrop-blur-[2px]">
+                      <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-500">
+                        <LayoutGrid size={28} />
+                      </div>
                     </div>
-                  </div>
 
-                  {game.isHot && (
-                    <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/30">
-                      Hot
+                    {game.isHot && (
+                      <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/30">
+                        Hot
+                      </div>
+                    )}
+
+                    {/* Expand Indicator */}
+                    <div className={`absolute bottom-4 right-4 w-10 h-10 rounded-full bg-slate-900/80 backdrop-blur flex items-center justify-center transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                      <ChevronRight size={20} className="text-white rotate-90" />
                     </div>
-                  )}
-                </div>
-                
-                <div className="p-7">
-                  <h3 className="text-xl font-black text-white group-hover:text-purple-400 transition-colors tracking-tight">{game.name}</h3>
-                  <div className="flex items-center justify-between mt-3">
-                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest group-hover:text-slate-400 transition-colors">
-                      {game.englishName}
-                    </span>
-                    <div className="h-1 w-8 bg-slate-800 rounded-full group-hover:w-12 group-hover:bg-purple-500 transition-all duration-500"></div>
+                  </div>
+                  
+                  {/* Game Info */}
+                  <div className="p-7">
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => handleGameClick(game)}
+                    >
+                      <h3 className="text-xl font-black text-white group-hover:text-purple-400 transition-colors tracking-tight">{game.name}</h3>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest group-hover:text-slate-400 transition-colors">
+                          {game.englishName}
+                        </span>
+                        <div className="h-1 w-8 bg-slate-800 rounded-full group-hover:w-12 group-hover:bg-purple-500 transition-all duration-500"></div>
+                      </div>
+                    </div>
+
+                    {/* Package Selector */}
+                    {isExpanded && (
+                      <div className="mt-6 pt-6 border-t border-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <p className="text-sm text-slate-400 mb-4">選擇方案：</p>
+                        <div className="space-y-2 mb-6">
+                          {game.packages.map((pkg) => (
+                            <label
+                              key={pkg.id}
+                              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                                selectedPackageId === pkg.id 
+                                  ? 'bg-purple-600/20 border border-purple-500/50' 
+                                  : 'bg-slate-800/50 border border-transparent hover:bg-slate-800'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={`package-${game.id}`}
+                                value={pkg.id}
+                                checked={selectedPackageId === pkg.id}
+                                onChange={() => handlePackageSelect(game.id, pkg.id)}
+                                className="w-4 h-4 text-purple-500 focus:ring-purple-500 bg-slate-700 border-slate-600"
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium text-white">{pkg.name}</p>
+                              </div>
+                              <p className="font-bold text-cyan-400">
+                                NT${pkg.price.toLocaleString()}
+                              </p>
+                            </label>
+                          ))}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={() => handleAddToCart(game)}
+                            disabled={!selectedPackageId}
+                            className="flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all"
+                          >
+                            <ShoppingCart size={18} />
+                            加入購物車
+                          </button>
+                          <button
+                            onClick={() => handleBuyNow(game)}
+                            disabled={!selectedPackageId}
+                            className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all"
+                          >
+                            <Zap size={18} />
+                            立即購買
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Empty State */}

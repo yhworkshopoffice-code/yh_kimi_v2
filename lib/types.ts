@@ -6,6 +6,31 @@ export interface GamePackage {
   image?: string;
 }
 
+// Option Group Types
+export interface OptionGroup {
+  id: string;
+  label: string;
+  order: number;
+  required: boolean;
+  selectionMode: 'single' | 'multi';
+  minSelections?: number;
+  maxSelections?: number;
+  minTotalQty?: number;
+  maxTotalQty?: number;
+  options: Option[];
+}
+
+export interface Option {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+  description?: string;
+  minQty?: number;
+  maxQty?: number;
+  step?: number;
+}
+
 export interface Game {
   id: string;
   name: string;
@@ -15,6 +40,7 @@ export interface Game {
   category: 'hot' | 'uid' | 'card';
   uidOnly?: boolean;
   packages: GamePackage[];
+  optionGroups?: OptionGroup[];
 }
 
 export interface PriceItem {

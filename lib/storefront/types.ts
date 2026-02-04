@@ -6,7 +6,33 @@
 // 遊戲類別
 export type GameCategory = 'hot' | 'uid' | 'card';
 
-// 遊戲套餐
+// 選項類別（Tab）
+export interface OptionGroup {
+  id: string;
+  label: string;
+  order: number;
+  required: boolean;
+  selectionMode: 'single' | 'multi';
+  minSelections?: number;
+  maxSelections?: number;
+  minTotalQty?: number;
+  maxTotalQty?: number;
+  options: Option[];
+}
+
+// 選項（擴充 GamePackage）
+export interface Option {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+  description?: string;
+  minQty?: number;
+  maxQty?: number;
+  step?: number;
+}
+
+// 遊戲套餐（向後兼容）
 export interface GamePackage {
   id: string;
   name: string;
@@ -24,6 +50,7 @@ export interface Game {
   category: GameCategory;
   uidOnly?: boolean;
   packages: GamePackage[];
+  optionGroups?: OptionGroup[];
 }
 
 // 價格項目
